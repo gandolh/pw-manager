@@ -1,0 +1,38 @@
+{
+  "name": "pw-manager",
+  "version": "1.0.0",
+  "description": "Just a password manager",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gandolh/pw-manager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gandolh/pw-manager/issues"
+  },
+  "homepage": "https://github.com/gandolh/pw-manager#readme",
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "clipboardy": "^5.3.1",
+    "dayjs": "^1.11.20"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}
