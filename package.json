@@ -25,8 +25,7 @@
   "homepage": "https://github.com/gandolh/pw-manager#readme",
   "dependencies": {
     "better-sqlite3": "^12.9.0",
-    "clipboardy": "^5.3.1",
-    "dayjs": "^1.11.20"
+    "clipboardy": "^5.3.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

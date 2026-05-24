@@ -28,7 +28,7 @@ The app is a single-process Node.js REPL. `src/index.ts` owns all I/O and sessio
 2. On startup, `crypto.ts` derives the AES-256-GCM key from the master password + stored salt (PBKDF2, 200k iterations). The key lives only in the module-level `sessionKey: Buffer | null` variable — it is never written to disk.
 3. Every command goes through `commands.ts`, which calls `db.ts` for storage and `crypto.ts` for encrypt/decrypt. Passwords are encrypted individually per row; the stored format is `base64(iv[12] + authTag[16] + ciphertext)`.
 4. The `meta` table holds the salt and a known-plaintext verification blob (`"pw-manager-ok"` encrypted) used to validate the master password without storing it.
-5. Session timeout (10 min inactivity) is checked before each command using `dayjs`; re-authentication follows the same 3-attempt limit as startup.
+5. Session timeout (10 min inactivity) is checked before each command using `Date.now()`; re-authentication follows the same 3-attempt limit as startup.
 
 **Module responsibilities:**
 

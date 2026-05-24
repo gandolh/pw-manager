@@ -1,5 +1,4 @@
 import * as readline from 'node:readline';
-import dayjs from 'dayjs';
 import { initDb, getMeta, saveMeta } from './db.js';
 import { deriveKey, encrypt, decrypt, generateSalt, VERIFICATION_PLAINTEXT } from './crypto.js';
 import { copyToClipboard } from './clipboard.js';
@@ -8,10 +7,11 @@ import type Database from 'better-sqlite3';
 
 const DB_PATH = 'data/vault.db';
 const TIMEOUT_MINUTES = 10;
+const TIMEOUT_MS = TIMEOUT_MINUTES * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 
 let sessionKey: Buffer | null = null;
-let lastActivity = dayjs();
+let lastActivity = Date.now();
 
 const db: Database.Database = (() => {
   try {
@@ -97,12 +97,12 @@ async function authenticate(): Promise<Buffer> {
 }
 
 async function checkTimeout(rl: readline.Interface): Promise<void> {
-  if (dayjs().diff(lastActivity, 'minute') >= TIMEOUT_MINUTES) {
+  if (Date.now() - lastActivity >= TIMEOUT_MS) {
     console.log('\nSession timed out. Please re-enter your master password.');
     sessionKey = null;
     rl.pause();
     sessionKey = await authenticate();
-    lastActivity = dayjs();
+    lastActivity = Date.now();
     rl.resume();
   }
 }
@@ -229,7 +229,7 @@ async function handleCommand(rl: readline.Interface, line: string): Promise<void
 
 async function main(): Promise<void> {
   sessionKey = await authenticate();
-  lastActivity = dayjs();
+  lastActivity = Date.now();
   console.log("Vault unlocked. Type 'help' for commands.");
 
   const rl = readline.createInterface({
@@ -255,7 +255,7 @@ async function main(): Promise<void> {
           wipeAndExit(1);
         }
       }
-      lastActivity = dayjs();
+      lastActivity = Date.now();
       askNext();
     });
   };
