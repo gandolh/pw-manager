@@ -1,16 +1,15 @@
 {
   "name": "pw-manager",
   "version": "1.0.0",
-  "description": "Just a password manager",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Desktop password manager (Electron)",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "build": "tsc"
+    "build:main": "tsc",
+    "build:renderer": "tsc -p src/renderer/tsconfig.json",
+    "copy:assets": "node -e \"const fs=require('fs');fs.mkdirSync('dist/renderer',{recursive:true});fs.copyFileSync('src/renderer/index.html','dist/renderer/index.html');fs.copyFileSync('src/renderer/styles.css','dist/renderer/styles.css');\"",
+    "build": "npm run build:main && npm run build:renderer && npm run copy:assets",
+    "start": "npm run build && electron .",
+    "rebuild": "electron-rebuild"
   },
   "repository": {
     "type": "git",
@@ -24,14 +23,13 @@
   },
   "homepage": "https://github.com/gandolh/pw-manager#readme",
   "dependencies": {
-    "better-sqlite3": "^12.9.0",
-    "clipboardy": "^5.3.1"
+    "better-sqlite3": "12.10.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^25.6.0",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "@electron/rebuild": "4.0.4",
+    "@types/better-sqlite3": "7.6.13",
+    "@types/node": "25.9.1",
+    "electron": "41.7.0",
+    "typescript": "6.0.3"
   }
 }
