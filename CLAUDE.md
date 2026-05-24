@@ -15,34 +15,35 @@ npx tsc -p src/renderer/tsconfig.json --noEmit  # Type-check renderer
 
 ## Architecture
 
-Electron app with a strict main/renderer split. The session key never leaves the main process.
+Electron app organized by process boundary. The session key never leaves the main process.
 
-**Main process (`src/main.ts`)** — owns app lifecycle, the SQLite vault, the in-memory session key, and the 10-minute idle timeout. Every renderer request goes through `requireKey()`, which throws `LOCKED` if the timeout elapsed. Emits `vault:locked` to the renderer when a timeout is detected.
+```
+src/
+  main/      # Node-only — runs in the main Electron process
+  preload/   # Bridge — runs in the preload context
+  renderer/  # Browser-only — vanilla TS SPA, no Node access
+  shared/    # Types and IPC channel names imported by all three
+```
 
-**Preload (`src/preload.ts`)** — exposes a typed `window.api` via `contextBridge` with `contextIsolation: true` and `nodeIntegration: false`. The renderer has no Node access — every privileged operation is an explicit IPC method.
+**Main (`src/main/`)** — `main.ts` boots the app and wires modules; `session.ts` owns the in-memory key + 10-minute idle timeout (emits `vault:locked` on expiry); `ipc.ts` registers every `ipcMain.handle` and gates them on `session.requireKey()` (throws `LOCKED`); `db.ts` owns SQLite queries; `crypto.ts` owns PBKDF2 + AES-256-GCM; `commands.ts` composes db + crypto for each handler.
 
-**Renderer (`src/renderer/`)** — vanilla TS SPA. `renderer.ts` is the entry point; renders unlock/setup/list/modal screens by swapping innerHTML. No framework, no bundler — `tsc` emits ES2022 modules loaded via `<script type="module">`.
+**Preload (`src/preload/preload.ts`)** — exposes `window.api` via `contextBridge` with `contextIsolation: true` and `nodeIntegration: false`. Uses the `IPC` channel-name map from `shared/api.ts` so main and preload can't drift.
 
-**Pure logic modules** — reused unchanged from the original CLI:
+**Renderer (`src/renderer/`)** — vanilla TS SPA. `renderer.ts` swaps `innerHTML` to render unlock/setup/list/modal screens. No framework, no bundler. Imports only `import type` from `shared/` — no runtime Node access.
 
-| File | Owns |
-|---|---|
-| `src/db.ts` | All SQLite queries; same schema as before (`meta`, `credentials`) |
-| `src/crypto.ts` | PBKDF2 (200k iterations), AES-256-GCM, format `base64(iv[12] + authTag[16] + ct)` |
-| `src/commands.ts` | DB+crypto operations invoked by IPC handlers |
-| `src/types.ts` | Shared interfaces |
+**Shared (`src/shared/`)** — `types.ts` (domain types: `Credential`, `Meta`, `CredentialInput`, etc.) and `api.ts` (the `Api` interface that preload implements and renderer types against, plus the `IPC` channel-name constant). Single source of truth for the IPC contract.
 
-**Vault location:** `app.getPath('userData')/vault.db` (OS-standard per-user app data directory, not the project folder).
+**Vault location:** `app.getPath('userData')/vault.db`.
 
 ## Build pipeline
 
 Two separate TypeScript compilations because main is CommonJS (Node16) and renderer is ES2022 modules (browser):
 
-- `tsconfig.json` (root) — compiles `src/*.ts` except `src/renderer/**` to `dist/`
-- `src/renderer/tsconfig.json` — compiles `src/renderer/renderer.ts` to `dist/renderer/`
-- `copy:assets` copies `index.html` and `styles.css` to `dist/renderer/`
+- `tsconfig.json` (root) — compiles `src/main/`, `src/preload/`, `src/shared/` to `dist/{main,preload,shared}/` as CommonJS.
+- `src/renderer/tsconfig.json` — compiles `src/renderer/renderer.ts` to `dist/renderer/renderer.js` as ES modules. `rootDir` is `..` (src/) so the shared files are visible to the type-checker; only `renderer.ts` produces runtime output since renderer uses `import type` from `shared/`.
+- `copy:assets` copies `index.html` and `styles.css` to `dist/renderer/`.
 
-`main.ts` loads the renderer via `path.join(__dirname, 'renderer', 'index.html')`.
+`main.ts` loads the renderer via `path.join(__dirname, '..', 'renderer', 'index.html')` and the preload via `path.join(__dirname, '..', 'preload', 'preload.js')`.
 
 ## Native modules
 

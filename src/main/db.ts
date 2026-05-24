@@ -1,6 +1,6 @@
 import DatabaseConstructor from 'better-sqlite3';
 import type Database from 'better-sqlite3';
-import type { Credential, Meta } from './types.js';
+import type { Credential, Meta } from '../shared/types.js';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 

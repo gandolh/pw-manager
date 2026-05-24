@@ -1,17 +1,13 @@
 import type Database from 'better-sqlite3';
-import type { Credential } from './types.js';
+import type { Credential, CredentialInput, CredentialSummary, CopyField } from '../shared/types.js';
 import { addCredential, getCredential, getAllCredentials, updateCredential, deleteCredential } from './db.js';
 import { encrypt, decrypt } from './crypto.js';
 
-export function cmdList(db: Database.Database): Omit<Credential, 'password'>[] {
+export function cmdList(db: Database.Database): CredentialSummary[] {
   return getAllCredentials(db).map(({ id, name, username }) => ({ id, name, username }));
 }
 
-export function cmdAdd(
-  db: Database.Database,
-  key: Buffer,
-  input: { name: string; username: string; password: string }
-): number {
+export function cmdAdd(db: Database.Database, key: Buffer, input: CredentialInput): number {
   return addCredential(db, {
     name: input.name,
     username: input.username,
@@ -25,12 +21,7 @@ export function cmdRemove(db: Database.Database, id: number): boolean {
   return true;
 }
 
-export function cmdEdit(
-  db: Database.Database,
-  key: Buffer,
-  id: number,
-  input: { name: string; username: string; password: string }
-): boolean {
+export function cmdEdit(db: Database.Database, key: Buffer, id: number, input: CredentialInput): boolean {
   const existing = getCredential(db, id);
   if (!existing) return false;
   const decryptedExisting = decrypt(existing.password, key);
@@ -48,12 +39,7 @@ export function cmdSee(db: Database.Database, key: Buffer, id: number): Credenti
   return { ...cred, password: decrypt(cred.password, key) };
 }
 
-export function cmdCopy(
-  db: Database.Database,
-  key: Buffer,
-  id: number,
-  field: 'password' | 'username'
-): string | null {
+export function cmdCopy(db: Database.Database, key: Buffer, id: number, field: CopyField): string | null {
   const cred = getCredential(db, id);
   if (!cred) return null;
   if (field === 'username') return cred.username;

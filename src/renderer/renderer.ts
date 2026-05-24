@@ -1,17 +1,5 @@
-interface Api {
-  vaultExists(): Promise<boolean>;
-  isLocked(): Promise<boolean>;
-  setup(pw: string): Promise<{ ok: boolean; error?: string }>;
-  unlock(pw: string): Promise<{ ok: boolean; error?: string }>;
-  lock(): Promise<void>;
-  list(): Promise<{ id: number; name: string; username: string }[]>;
-  add(input: { name: string; username: string; password: string }): Promise<number>;
-  see(id: number): Promise<{ id: number; name: string; username: string; password: string } | null>;
-  edit(id: number, input: { name: string; username: string; password: string }): Promise<boolean>;
-  remove(id: number): Promise<boolean>;
-  copy(id: number, field: 'password' | 'username'): Promise<boolean>;
-  onLocked(cb: () => void): void;
-}
+import type { Api } from '../shared/api.js';
+import type { CredentialSummary } from '../shared/types.js';
 
 const api = (window as unknown as { api: Api }).api;
 const app = document.getElementById('app')!;
@@ -155,7 +143,7 @@ async function renderList(): Promise<void> {
 
 async function refreshList(): Promise<void> {
   const body = document.getElementById('list-body')!;
-  let rows: { id: number; name: string; username: string }[];
+  let rows: CredentialSummary[];
   try {
     rows = await api.list();
   } catch {
